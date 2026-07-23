@@ -55,6 +55,14 @@ jobs:
             exit 1
           fi
 
+          if ! jq -e --arg project_id "${PROJECT_ID}" '.targets | has($project_id)' .firebaserc >/dev/null; then
+            echo "ERROR: .firebaserc does not contain targets for project '${PROJECT_ID}'."
+            echo "If this is a new project id, apply targets with:"
+            echo "  firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project ${PROJECT_ID}"
+            echo "  firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project ${PROJECT_ID}"
+            exit 1
+          fi
+
           if [ "${TARGET}" = "admin-panel" ] || [ "${TARGET}" = "all" ]; then
             if [ ! -d apps/admin/dist ]; then
               echo "ERROR: Missing build output directory apps/admin/dist"

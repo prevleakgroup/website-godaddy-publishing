@@ -63,7 +63,7 @@ This repository also supports Firebase Hosting target-based deploys using:
 - `__ADMIN_PANEL_SITE_ID__`
 - `__MARKETING_LANDING_SITE_ID__`
 
-Replace these values directly in `.firebaserc` or run the target apply commands below.
+You must replace these values before first real deploy. Replace them directly in `.firebaserc` or run the target apply commands below.
 
 ### 2) Build commands (must produce deploy directories)
 
