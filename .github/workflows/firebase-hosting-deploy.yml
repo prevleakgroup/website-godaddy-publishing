@@ -35,6 +35,9 @@ jobs:
       - name: Install Firebase CLI
         run: npm install --global firebase-tools@13.0.0
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install --yes jq
+
       - name: Validate hosting target mapping and build output directories
         env:
           PROJECT_ID: ${{ inputs.project_id }}
