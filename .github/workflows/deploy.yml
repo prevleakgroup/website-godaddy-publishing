@@ -1,0 +1,31 @@
+name: Deploy to GoDaddy (cPanel SFTP)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SFTP to cPanel
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.CPANEL_SFTP_HOST }}
+          port: ${{ secrets.CPANEL_SFTP_PORT }}
+          username: ${{ secrets.CPANEL_SFTP_USERNAME }}
+          password: ${{ secrets.CPANEL_SFTP_PASSWORD }}
+          # Deploy only website files; exclude .github and other metadata directories
+          local_path: ./!(\.github|\.git)
+          remote_path: ${{ secrets.CPANEL_SFTP_REMOTE_PATH }}
+          sftp_only: true
+          # Files deleted locally are NOT removed from the server automatically.
+          # To clean up stale files, log in via SFTP/cPanel File Manager and delete them manually.
+          delete_remote_files: false
