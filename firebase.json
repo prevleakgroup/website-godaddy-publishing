@@ -1,0 +1,14 @@
+{
+  "hosting": [
+    {
+      "target": "admin-panel",
+      "public": "apps/admin/dist",
+      "ignore": ["firebase.json", "**/node_modules/**"]
+    },
+    {
+      "target": "marketing-landing",
+      "public": "apps/landing/out",
+      "ignore": ["firebase.json", "**/node_modules/**"]
+    }
+  ]
+}

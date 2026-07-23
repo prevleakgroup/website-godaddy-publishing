@@ -1,0 +1,99 @@
+name: Deploy Firebase Hosting Targets
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: Firebase project id (must match .firebaserc target mappings)
+        required: true
+      target:
+        description: Which hosting target to deploy
+        required: true
+        default: admin-panel
+        type: choice
+        options:
+          - admin-panel
+          - marketing-landing
+          - all
+
+jobs:
+  deploy-firebase-hosting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Validate hosting target mapping and build output directories
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f firebase.json ]; then
+            echo "ERROR: firebase.json not found at repository root."
+            exit 1
+          fi
+
+          if [ ! -f .firebaserc ]; then
+            echo "ERROR: .firebaserc not found at repository root."
+            echo "Create target mappings first using:"
+            echo "  firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project ${PROJECT_ID}"
+            echo "  firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project ${PROJECT_ID}"
+            exit 1
+          fi
+
+          if [ "${TARGET}" = "admin-panel" ] || [ "${TARGET}" = "all" ]; then
+            if [ ! -d apps/admin/dist ]; then
+              echo "ERROR: Missing build output directory apps/admin/dist"
+              echo "Build the admin panel before deploy."
+              exit 1
+            fi
+            if ! grep -q "\"admin-panel\"" .firebaserc; then
+              echo "ERROR: Missing hosting target mapping for admin-panel in .firebaserc"
+              echo "Run: firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project ${PROJECT_ID}"
+              exit 1
+            fi
+          fi
+
+          if [ "${TARGET}" = "marketing-landing" ] || [ "${TARGET}" = "all" ]; then
+            if [ ! -d apps/landing/out ]; then
+              echo "ERROR: Missing build output directory apps/landing/out"
+              echo "Build the landing site before deploy."
+              exit 1
+            fi
+            if ! grep -q "\"marketing-landing\"" .firebaserc; then
+              echo "ERROR: Missing hosting target mapping for marketing-landing in .firebaserc"
+              echo "Run: firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project ${PROJECT_ID}"
+              exit 1
+            fi
+          fi
+
+      - name: Deploy selected Firebase hosting target(s)
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: ${{ inputs.project_id }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${FIREBASE_TOKEN:-}" ]; then
+            echo "ERROR: FIREBASE_TOKEN secret is missing."
+            echo "Create a CI token with: firebase login:ci"
+            exit 1
+          fi
+
+          if [ "${TARGET}" = "all" ]; then
+            firebase deploy --project "${PROJECT_ID}" --only hosting:admin-panel,hosting:marketing-landing
+          else
+            firebase deploy --project "${PROJECT_ID}" --only "hosting:${TARGET}"
+          fi
