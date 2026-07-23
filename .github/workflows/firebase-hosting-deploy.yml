@@ -16,6 +16,9 @@ on:
           - marketing-landing
           - all
 
+permissions:
+  contents: read
+
 jobs:
   deploy-firebase-hosting:
     runs-on: ubuntu-latest

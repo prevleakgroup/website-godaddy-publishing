@@ -57,7 +57,13 @@ This repository also supports Firebase Hosting target-based deploys using:
 - `firebase.json` defines both hosting targets.
 - `.firebaserc` must map each target to a real Firebase Hosting site for your project.
 
-Update placeholder values in `.firebaserc` or run the target apply commands below.
+`.firebaserc` placeholders to replace:
+
+- `__FIREBASE_PROJECT_ID__`
+- `__ADMIN_PANEL_SITE_ID__`
+- `__MARKETING_LANDING_SITE_ID__`
+
+Replace these values directly in `.firebaserc` or run the target apply commands below.
 
 ### 2) Build commands (must produce deploy directories)
 
@@ -85,14 +91,14 @@ test -d apps/landing/out || (echo "Missing apps/landing/out. Build landing first
 Run once per Firebase project (replace placeholders):
 
 ```bash
-firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project <FIREBASE_PROJECT_ID>
-firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project <FIREBASE_PROJECT_ID>
+firebase target:apply hosting admin-panel __ADMIN_PANEL_SITE_ID__ --project __FIREBASE_PROJECT_ID__
+firebase target:apply hosting marketing-landing __MARKETING_LANDING_SITE_ID__ --project __FIREBASE_PROJECT_ID__
 ```
 
 Verify mappings:
 
 ```bash
-firebase target --project <FIREBASE_PROJECT_ID>
+firebase target --project __FIREBASE_PROJECT_ID__
 ```
 
 ### 4) Deploy commands
@@ -100,19 +106,19 @@ firebase target --project <FIREBASE_PROJECT_ID>
 Deploy admin only:
 
 ```bash
-firebase deploy --only hosting:admin-panel --project <FIREBASE_PROJECT_ID>
+firebase deploy --only hosting:admin-panel --project __FIREBASE_PROJECT_ID__
 ```
 
 Deploy landing only:
 
 ```bash
-firebase deploy --only hosting:marketing-landing --project <FIREBASE_PROJECT_ID>
+firebase deploy --only hosting:marketing-landing --project __FIREBASE_PROJECT_ID__
 ```
 
 Deploy both:
 
 ```bash
-firebase deploy --only hosting:admin-panel,hosting:marketing-landing --project <FIREBASE_PROJECT_ID>
+firebase deploy --only hosting:admin-panel,hosting:marketing-landing --project __FIREBASE_PROJECT_ID__
 ```
 
 ### 5) Common failure guardrails
@@ -122,7 +128,7 @@ firebase deploy --only hosting:admin-panel,hosting:marketing-landing --project <
 
 - **Error:** `Deploy target admin-panel not configured for project`  
   **Fix:** Re-run:
-  `firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project <FIREBASE_PROJECT_ID>`
+  `firebase target:apply hosting admin-panel __ADMIN_PANEL_SITE_ID__ --project __FIREBASE_PROJECT_ID__`
 
 - **Error:** `Directory 'apps/admin/dist' does not exist` (or `apps/landing/out`)  
   **Fix:** Run the corresponding build command first and verify directory exists.
