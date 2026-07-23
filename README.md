@@ -141,6 +141,13 @@ Use `.github/workflows/firebase-hosting-deploy.yml` (manual trigger) for target-
 - Input `target`: `admin-panel`, `marketing-landing`, or `all`
 - Required secret: `FIREBASE_TOKEN`
 
+Generate `FIREBASE_TOKEN` and save it in repository secrets:
+
+```bash
+firebase login:ci
+# copy the printed token and add it as FIREBASE_TOKEN in GitHub Secrets
+```
+
 ## Notes
 
 - Only website files are deployed; the `.github/` and `.git/` directories are excluded from the upload.
