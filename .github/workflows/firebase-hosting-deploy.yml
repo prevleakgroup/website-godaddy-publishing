@@ -61,7 +61,7 @@ jobs:
               echo "Build the admin panel before deploy."
               exit 1
             fi
-            if ! grep -q "\"admin-panel\"" .firebaserc; then
+            if ! jq -e --arg project_id "${PROJECT_ID}" '.targets[$project_id].hosting["admin-panel"] | type == "array" and length > 0' .firebaserc >/dev/null; then
               echo "ERROR: Missing hosting target mapping for admin-panel in .firebaserc"
               echo "Run: firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project ${PROJECT_ID}"
               exit 1
@@ -74,7 +74,7 @@ jobs:
               echo "Build the landing site before deploy."
               exit 1
             fi
-            if ! grep -q "\"marketing-landing\"" .firebaserc; then
+            if ! jq -e --arg project_id "${PROJECT_ID}" '.targets[$project_id].hosting["marketing-landing"] | type == "array" and length > 0' .firebaserc >/dev/null; then
               echo "ERROR: Missing hosting target mapping for marketing-landing in .firebaserc"
               echo "Run: firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project ${PROJECT_ID}"
               exit 1
