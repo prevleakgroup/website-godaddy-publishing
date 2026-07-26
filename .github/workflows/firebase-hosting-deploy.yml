@@ -1,0 +1,115 @@
+name: Deploy Firebase Hosting Targets
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: Firebase project id (must match .firebaserc target mappings)
+        required: true
+      target:
+        description: Which hosting target to deploy
+        required: true
+        default: admin-panel
+        type: choice
+        options:
+          - admin-panel
+          - marketing-landing
+          - all
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-firebase-hosting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools@13.0.0
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install --yes jq
+
+      - name: Validate hosting target mapping and build output directories
+        env:
+          PROJECT_ID: ${{ inputs.project_id }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f firebase.json ]; then
+            echo "ERROR: firebase.json not found at repository root."
+            exit 1
+          fi
+
+          if [ ! -f .firebaserc ]; then
+            echo "ERROR: .firebaserc not found at repository root."
+            echo "Create target mappings first using:"
+            echo "  firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project ${PROJECT_ID}"
+            echo "  firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project ${PROJECT_ID}"
+            exit 1
+          fi
+
+          if ! jq -e --arg project_id "${PROJECT_ID}" '.targets | has($project_id)' .firebaserc >/dev/null; then
+            echo "ERROR: .firebaserc does not contain targets for project '${PROJECT_ID}'."
+            echo "If this is a new project id, apply targets with:"
+            echo "  firebase target:apply hosting admin-panel <ADMIN_PANEL_SITE_ID> --project ${PROJECT_ID}"
+            echo "  firebase target:apply hosting marketing-landing <MARKETING_LANDING_SITE_ID> --project ${PROJECT_ID}"
+            exit 1
+          fi
+
+          check_target_mapping() {
+            local target_name="$1"
+            local site_id_placeholder="$2"
+            if ! jq -e --arg project_id "${PROJECT_ID}" --arg target_name "${target_name}" '.targets[$project_id].hosting[$target_name] | type == "array" and length > 0' .firebaserc >/dev/null; then
+              echo "ERROR: Missing hosting target mapping for ${target_name} in .firebaserc"
+              echo "Run: firebase target:apply hosting ${target_name} ${site_id_placeholder} --project ${PROJECT_ID}"
+              exit 1
+            fi
+          }
+
+          if [ "${TARGET}" = "admin-panel" ] || [ "${TARGET}" = "all" ]; then
+            if [ ! -d apps/admin/dist ]; then
+              echo "ERROR: Missing build output directory apps/admin/dist"
+              echo "Build the admin panel before deploy."
+              exit 1
+            fi
+            check_target_mapping "admin-panel" "<ADMIN_PANEL_SITE_ID>"
+          fi
+
+          if [ "${TARGET}" = "marketing-landing" ] || [ "${TARGET}" = "all" ]; then
+            if [ ! -d apps/landing/out ]; then
+              echo "ERROR: Missing build output directory apps/landing/out"
+              echo "Build the landing site before deploy."
+              exit 1
+            fi
+            check_target_mapping "marketing-landing" "<MARKETING_LANDING_SITE_ID>"
+          fi
+
+      - name: Deploy selected Firebase hosting target(s)
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: ${{ inputs.project_id }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${FIREBASE_TOKEN:-}" ]; then
+            echo "ERROR: FIREBASE_TOKEN secret is missing."
+            echo "Create a CI token with: firebase login:ci"
+            exit 1
+          fi
+
+          if [ "${TARGET}" = "all" ]; then
+            firebase deploy --project "${PROJECT_ID}" --only hosting:admin-panel,hosting:marketing-landing
+          else
+            firebase deploy --project "${PROJECT_ID}" --only "hosting:${TARGET}"
+          fi

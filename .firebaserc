@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "__FIREBASE_PROJECT_ID__"
+  },
+  "targets": {
+    "__FIREBASE_PROJECT_ID__": {
+      "hosting": {
+        "admin-panel": ["__ADMIN_PANEL_SITE_ID__"],
+        "marketing-landing": ["__MARKETING_LANDING_SITE_ID__"]
+      }
+    }
+  }
+}
